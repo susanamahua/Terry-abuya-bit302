@@ -53,6 +53,8 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static frontend files
 app.use(express.static(path.join(__dirname, '..')));
 
+app.use(express.static(path.join(__dirname, '..')));
+
 // ---- API Routes ----
 app.use('/api/auth', authRoutes);
 app.use('/api/homes', homesRoutes);
@@ -94,6 +96,11 @@ app.use((err, req, res, next) => {
 // 404 handler for API routes
 app.use('/api/*', (req, res) => {
   res.status(404).json({ success: false, message: 'API endpoint not found' });
+});
+
+// Catch-all route to serve the frontend
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'index.html'));
 });
 
 // ---- Start Server ----
