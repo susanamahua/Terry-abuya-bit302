@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Manage children and students across all Hope Haven homes.">
+  <title>Children Management | Hope bridge Admin</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .children-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: var(--space-md);
+      margin-bottom: var(--space-lg);
+    }
+
+    .filter-row {
+      display: flex;
+      gap: var(--space-md);
+      flex-wrap: wrap;
+      margin-bottom: var(--space-lg);
+    }
+
+    .filter-row .form-input,
+    .filter-row .form-select {
+      max-width: 220px;
+    }
+
+    .child-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      background: var(--primary-100);
+    }
+
+    .child-name-cell {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .actions-cell {
+      display: flex;
+      gap: var(--space-xs);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="admin-layout">
+    <aside class="admin-sidebar">
+      <div class="sidebar-brand"><span class="brand-icon">🏡</span><span>Hope Haven</span></div>
+      <ul class="sidebar-nav">
+        <li><a href="admin-dashboard.html"><span class="nav-icon">📊</span><span>Dashboard</span></a></li>
+        <li><a href="admin-children.html" class="active"><span class="nav-icon">👧🏾</span><span>Children</span></a>
+        </li>
+        <li><a href="admin-donations.html"><span class="nav-icon">💰</span><span>Donations</span></a></li>
+        <li><a href="admin-welfare.html"><span class="nav-icon">🏥</span><span>Welfare</span></a></li>
+      </ul>
+      <div class="sidebar-footer">
+        <a href="#" onclick="Auth.logout();window.location.href='index.html';"><span
+            class="nav-icon">🚪</span><span>Logout</span></a>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <div class="admin-header">
+        <h1>Children Management 👧🏾</h1>
+        <div class="header-actions">
+          <button class="btn btn-primary" onclick="openModal('addChildModal')">+ Add New Child</button>
+        </div>
+      </div>
+
+      <!-- Summary Cards -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-md);margin-bottom:var(--space-xl);"
+        id="childStats" class="stagger"></div>
+
+      <!-- Filters -->
+      <div class="filter-row">
+        <input type="text" class="form-input" id="searchChild" placeholder="🔍 Search by name..."
+          oninput="renderChildren()">
+        <select class="form-select" id="filterHome" onchange="renderChildren()">
+          <option value="">All Homes</option>
+        </select>
+        <select class="form-select" id="filterGender" onchange="renderChildren()">
+          <option value="">All Genders</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+        </select>
+        <select class="form-select" id="filterWelfare" onchange="renderChildren()">
+          <option value="">All Status</option>
+          <option value="green">Good</option>
+          <option value="amber">Needs Attention</option>
+          <option value="red">Critical</option>
+        </select>
+      </div>
+
+      <!-- Children Table -->
+      <div class="table-container">
+        <table class="data-table" id="childrenTable">
+          <thead>
+            <tr>
+              <th>Child</th>
+              <th>Age</th>
+              <th>Gender</th>
+              <th>Home</th>
+              <th>Education</th>
+              <th>Health</th>
+              <th>Welfare</th>
+              <th>Sponsor</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="childrenBody"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:var(--space-md);color:var(--text-muted);font-size:0.85rem;" id="childCount"></div>
+    </main>
+  </div>
+
+  <!-- Add/Edit Child Modal -->
+  <div class="modal-overlay" id="addChildModal">
+    <div class="modal" style="max-width:600px;">
+      <div class="modal-header">
+        <h3 id="childModalTitle">➕ Add New Child</h3>
+        <button class="modal-close" onclick="closeModal('addChildModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="childForm" onsubmit="handleSaveChild(event)">
+          <input type="hidden" id="editChildId">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Full Name *</label>
+              <input type="text" class="form-input" id="childName" placeholder="e.g. John Kamau" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Age *</label>
+              <input type="number" class="form-input" id="childAge" min="1" max="18" placeholder="e.g. 10" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Gender *</label>
+              <select class="form-select" id="childGender" required>
+                <option value="">Select gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Children's Home *</label>
+              <select class="form-select" id="childHome" required>
+                <option value="">Select home</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Education Level *</label>
+              <input type="text" class="form-input" id="childEducation" placeholder="e.g. Grade 5" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Health Status *</label>
+              <select class="form-select" id="childHealth" required>
+                <option value="Good">Good</option>
+                <option value="Under Treatment">Under Treatment</option>
+                <option value="Recovering">Recovering</option>
+                <option value="Needs Checkup">Needs Checkup</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Welfare Status *</label>
+              <select class="form-select" id="childWelfare" required>
+                <option value="green">🟢 Good</option>
+                <option value="amber">🟡 Needs Attention</option>
+                <option value="red">🔴 Critical</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Join Date</label>
+              <input type="date" class="form-input" id="childJoinDate">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Needs / Requirements</label>
+            <textarea class="form-textarea" id="childNeeds" placeholder="e.g. School fees, uniform, medical care"
+              rows="2"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;" id="childSubmitBtn">Add Child ✨</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if (!Auth.isAdmin()) { window.location.href = 'admin-login.html'; }
+
+    let homes = [];
+    let allChildren = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      homes = await db.getHomes();
+
+      // Populate home filters
+      const homeSelects = [document.getElementById('filterHome'), document.getElementById('childHome')];
+      homes.forEach(h => {
+        homeSelects.forEach(sel => {
+          const opt = document.createElement('option');
+          opt.value = h.home_id;
+          opt.textContent = h.name;
+          sel.appendChild(opt);
+        });
+      });
+
+      await loadData();
+
+      if (typeof realtime !== 'undefined') {
+        realtime.on('child_update', () => loadData());
+        realtime.on('new_child', () => loadData());
+        realtime.on('welfare_alert', () => loadData());
+      }
+    });
+
+    async function loadData() {
+      allChildren = await db.getChildren();
+      renderStats();
+      renderChildren();
+    }
+
+    function renderStats() {
+      let green = 0, amber = 0, red = 0, sponsored = 0;
+      allChildren.forEach(c => {
+        if (c.welfare_status === 'green') green++;
+        else if (c.welfare_status === 'red') red++;
+        else amber++;
+        if (c.sponsorship_status === 'Sponsored') sponsored++;
+      });
+
+      document.getElementById('childStats').innerHTML = `
+        <div class="stat-card"><div class="stat-icon amber">👧🏾</div><div><div class="stat-value">${allChildren.length}</div><div class="stat-label">Total Children</div></div></div>
+        <div class="stat-card"><div class="stat-icon green">✅</div><div><div class="stat-value">${green}</div><div class="stat-label">Good Welfare</div></div></div>
+        <div class="stat-card"><div class="stat-icon coral">⚠️</div><div><div class="stat-value">${amber + red}</div><div class="stat-label">Need Attention</div></div></div>
+        <div class="stat-card"><div class="stat-icon rose">💝</div><div><div class="stat-value">${sponsored}</div><div class="stat-label">Sponsored</div></div></div>
+      `;
+    }
+
+    function renderChildren() {
+      const search = document.getElementById('searchChild').value.toLowerCase();
+      const homeFilter = document.getElementById('filterHome').value;
+      const genderFilter = document.getElementById('filterGender').value;
+      const welfareFilter = document.getElementById('filterWelfare').value;
+
+      let filtered = allChildren;
+      if (search) filtered = filtered.filter(c => c.name.toLowerCase().includes(search));
+      if (homeFilter) filtered = filtered.filter(c => c.home_id == homeFilter);
+      if (genderFilter) filtered = filtered.filter(c => c.gender === genderFilter);
+      if (welfareFilter) filtered = filtered.filter(c => c.welfare_status === welfareFilter);
+
+      const tbody = document.getElementById('childrenBody');
+      tbody.innerHTML = filtered.map(c => {
+        const homeName = c.home ? c.home.name : 'N/A';
+        return `
+          <tr>
+            <td><div class="child-name-cell"><span class="child-avatar">${c.photo || '👧🏾'}</span><strong>${c.name}</strong></div></td>
+            <td>${c.age}</td>
+            <td>${c.gender}</td>
+            <td>${homeName}</td>
+            <td>${c.education_level || c.education || 'N/A'}</td>
+            <td><span class="tag ${c.health_status === 'Good' ? 'tag-green' : 'tag-amber'}">${c.health_status}</span></td>
+            <td><div class="welfare-status"><span class="welfare-dot ${getWelfareColor(c.welfare_status)}"></span>${getWelfareLabel(c.welfare_status)}</div></td>
+            <td>${c.sponsorship_status === 'Sponsored' ? '<span class="tag tag-green">Yes</span>' : '<span class="tag tag-rose">No</span>'}</td>
+            <td><div class="actions-cell">
+              <button class="btn btn-sm btn-secondary" onclick="editChild('${c.child_id}')">✏️</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteChild('${c.child_id}','${c.name}')">🗑️</button>
+            </div></td>
+          </tr>
+        `;
+      }).join('');
+
+      document.getElementById('childCount').textContent = `Showing ${filtered.length} of ${allChildren.length} children`;
+    }
+
+    async function handleSaveChild(e) {
+      e.preventDefault();
+      const editId = document.getElementById('editChildId').value;
+      const data = {
+        name: document.getElementById('childName').value,
+        age: parseInt(document.getElementById('childAge').value),
+        gender: document.getElementById('childGender').value,
+        home_id: document.getElementById('childHome').value,
+        education_level: document.getElementById('childEducation').value,
+        health_status: document.getElementById('childHealth').value,
+        welfare_status: document.getElementById('childWelfare').value,
+        needs: document.getElementById('childNeeds').value,
+        photo: document.getElementById('childGender').value === 'Female' ? '👧🏾' : '👦🏾'
+      };
+
+      if (editId) {
+        const res = await db.updateChild(editId, data);
+        if (res.success) showToast('Child updated successfully! ✅');
+        else showToast(res.message || 'Error updating child', 'error');
+      } else {
+        const res = await db.createChild(data);
+        if (res.success) showToast('New child added successfully! 🎉');
+        else showToast(res.message || 'Error adding child', 'error');
+      }
+
+      closeModal('addChildModal');
+      document.getElementById('childForm').reset();
+      document.getElementById('editChildId').value = '';
+      document.getElementById('childModalTitle').textContent = '➕ Add New Child';
+      document.getElementById('childSubmitBtn').textContent = 'Add Child ✨';
+
+      await loadData();
+    }
+
+    async function editChild(id) {
+      const res = await db.getChildById(id);
+      if (!res.success) return;
+      const child = res.child;
+
+      document.getElementById('editChildId').value = child.child_id;
+      document.getElementById('childName').value = child.name;
+      document.getElementById('childAge').value = child.age;
+      document.getElementById('childGender').value = child.gender;
+      document.getElementById('childHome').value = child.home_id;
+      document.getElementById('childEducation').value = child.education_level || child.education || '';
+      document.getElementById('childHealth').value = child.health_status;
+      document.getElementById('childWelfare').value = child.welfare_status;
+      document.getElementById('childNeeds').value = child.needs || '';
+
+      document.getElementById('childModalTitle').textContent = '✏️ Edit Child';
+      document.getElementById('childSubmitBtn').textContent = 'Update Child ✅';
+      openModal('addChildModal');
+    }
+
+    async function deleteChild(id, name) {
+      if (confirm(`Are you sure you want to remove ${name}? This action cannot be undone.`)) {
+        const res = await db.deleteChild(id);
+        if (res.success) {
+          showToast(`${name} has been removed.`, 'warning');
+          await loadData();
+        } else {
+          showToast(res.message || 'Error deleting child', 'error');
+        }
+      }
+    }
+  </script>
+</body>
+
+</html>

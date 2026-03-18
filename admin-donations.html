@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Manage and track all donations received across Hope Haven homes.">
+  <title>Donation Management | Hope Haven Admin</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .donation-filters { display: flex; gap: var(--space-md); flex-wrap: wrap; margin-bottom: var(--space-lg); align-items: center; }
+    .donation-filters .form-input, .donation-filters .form-select { max-width: 200px; }
+    .amount-cell { font-weight: 800; color: var(--primary-600); }
+    .status-select { padding: 6px 12px; border: 2px solid var(--neutral-300); border-radius: var(--border-radius-md); font-family: var(--font-body); font-weight: 600; font-size: 0.8rem; cursor: pointer; background: white; }
+    .summary-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-md); margin-bottom: var(--space-xl); }
+    @media(max-width:1024px) { .summary-cards { grid-template-columns: repeat(2,1fr); } }
+    @media(max-width:640px) { .summary-cards { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="admin-sidebar">
+      <div class="sidebar-brand"><span class="brand-icon">🏡</span><span>Hope Haven</span></div>
+      <ul class="sidebar-nav">
+        <li><a href="admin-dashboard.html"><span class="nav-icon">📊</span><span>Dashboard</span></a></li>
+        <li><a href="admin-children.html"><span class="nav-icon">👧🏾</span><span>Children</span></a></li>
+        <li><a href="admin-donations.html" class="active"><span class="nav-icon">💰</span><span>Donations</span></a></li>
+        <li><a href="admin-welfare.html"><span class="nav-icon">🏥</span><span>Welfare</span></a></li>
+      </ul>
+      <div class="sidebar-footer">
+        <a href="#" onclick="Auth.logout();window.location.href='index.html';"><span class="nav-icon">🚪</span><span>Logout</span></a>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <div class="admin-header">
+        <h1>Donation Management 💰</h1>
+        <div class="header-actions">
+          <button class="btn btn-secondary btn-sm" onclick="exportDonations()">📥 Export CSV</button>
+        </div>
+      </div>
+
+      <!-- Summary -->
+      <div class="summary-cards stagger" id="donationStats"></div>
+
+      <!-- Filters -->
+      <div class="donation-filters">
+        <input type="text" class="form-input" id="searchDonation" placeholder="🔍 Search donor or home..." oninput="renderDonations()">
+        <select class="form-select" id="filterStatus" onchange="renderDonations()">
+          <option value="">All Status</option>
+          <option value="Completed">Completed</option>
+          <option value="Pending">Pending</option>
+          <option value="Rejected">Rejected</option>
+        </select>
+        <select class="form-select" id="filterType" onchange="renderDonations()">
+          <option value="">All Types</option>
+          <option value="Education">Education</option>
+          <option value="Healthcare">Healthcare</option>
+          <option value="Food & Nutrition">Food & Nutrition</option>
+          <option value="Clothing">Clothing</option>
+          <option value="General">General</option>
+          <option value="Infrastructure">Infrastructure</option>
+          <option value="Vocational Training">Vocational Training</option>
+        </select>
+        <select class="form-select" id="sortField" onchange="renderDonations()">
+          <option value="date">Sort by Date</option>
+          <option value="amount">Sort by Amount</option>
+          <option value="donor">Sort by Donor</option>
+        </select>
+      </div>
+
+      <!-- Donations Table -->
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Donor</th>
+              <th>Home</th>
+              <th>Child</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Message</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="donationsBody"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:var(--space-md);color:var(--text-muted);font-size:0.85rem;" id="donationCount"></div>
+    </main>
+  </div>
+
+  <!-- Donation Detail Modal -->
+  <div class="modal-overlay" id="donationDetailModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>📋 Donation Details</h3>
+        <button class="modal-close" onclick="closeModal('donationDetailModal')">&times;</button>
+      </div>
+      <div class="modal-body" id="donationDetailBody"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('donationDetailModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if (!Auth.isAdmin()) { window.location.href = 'admin-login.html'; }
+
+    let allDonations = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadData();
+
+      if (typeof realtime !== 'undefined') {
+        realtime.on('new_donation', () => loadData());
+        realtime.on('donation_update', () => loadData());
+      }
+    });
+
+    async function loadData() {
+      allDonations = await db.getDonations();
+      renderStats();
+      renderDonations();
+    }
+
+    function renderStats() {
+      const total = allDonations.reduce((s, d) => s + d.amount, 0);
+      const completed = allDonations.filter(d => d.status === 'Completed');
+      const completedAmt = completed.reduce((s, d) => s + d.amount, 0);
+      const pending = allDonations.filter(d => d.status === 'Pending');
+      const pendingAmt = pending.reduce((s, d) => s + d.amount, 0);
+
+      document.getElementById('donationStats').innerHTML = `
+        <div class="stat-card"><div class="stat-icon amber">💰</div><div><div class="stat-value">${formatCurrency(total)}</div><div class="stat-label">Total Donations</div></div></div>
+        <div class="stat-card"><div class="stat-icon green">✅</div><div><div class="stat-value">${formatCurrency(completedAmt)}</div><div class="stat-label">${completed.length} Completed</div></div></div>
+        <div class="stat-card"><div class="stat-icon coral">⏳</div><div><div class="stat-value">${formatCurrency(pendingAmt)}</div><div class="stat-label">${pending.length} Pending</div></div></div>
+        <div class="stat-card"><div class="stat-icon rose">📦</div><div><div class="stat-value">${allDonations.length}</div><div class="stat-label">Total Transactions</div></div></div>
+      `;
+    }
+
+    function renderDonations() {
+      const search = document.getElementById('searchDonation').value.toLowerCase();
+      const statusFilter = document.getElementById('filterStatus').value;
+      const typeFilter = document.getElementById('filterType').value;
+      const sortField = document.getElementById('sortField').value;
+
+      let filtered = allDonations;
+      if (search) filtered = filtered.filter(d => 
+        (d.donor && d.donor.name.toLowerCase().includes(search)) || 
+        (d.home && d.home.name.toLowerCase().includes(search))
+      );
+      if (statusFilter) filtered = filtered.filter(d => d.status === statusFilter);
+      if (typeFilter) filtered = filtered.filter(d => d.donation_type === typeFilter);
+
+      // Sort
+      filtered.sort((a, b) => {
+        if (sortField === 'amount') return b.amount - a.amount;
+        if (sortField === 'donor') return (a.donor?.name || '').localeCompare(b.donor?.name || '');
+        return new Date(b.donation_date) - new Date(a.donation_date);
+      });
+
+      const tbody = document.getElementById('donationsBody');
+      tbody.innerHTML = filtered.map(d => {
+        const donorName = d.donor ? d.donor.name : 'Unknown';
+        const homeName = d.home ? d.home.name : 'N/A';
+        const childName = d.child ? d.child.name : '<span style="color:var(--text-muted)">General</span>';
+        
+        return `
+        <tr>
+          <td>${formatDate(d.donation_date)}</td>
+          <td><strong>${donorName}</strong></td>
+          <td style="font-size:0.85rem;">${homeName}</td>
+          <td style="font-size:0.85rem;">${childName}</td>
+          <td><span class="tag tag-amber">${d.donation_type}</span></td>
+          <td class="amount-cell">${formatCurrency(d.amount)}</td>
+          <td>
+            <select class="status-select" onchange="updateStatus('${d.donation_id}', this.value)" style="color:${d.status === 'Completed' ? 'var(--success-600)' : d.status === 'Pending' ? '#A16207' : 'var(--danger-600)'}">
+              <option value="Pending" ${d.status === 'Pending' ? 'selected' : ''}>⏳ Pending</option>
+              <option value="Completed" ${d.status === 'Completed' ? 'selected' : ''}>✅ Completed</option>
+              <option value="Failed" ${d.status === 'Failed' ? 'selected' : ''}>❌ Failed</option>
+            </select>
+          </td>
+          <td style="max-width:120px;font-size:0.8rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${d.message || ''}">${d.message || '—'}</td>
+          <td><button class="btn btn-sm btn-secondary" onclick="viewDonation('${d.donation_id}')">👁️</button></td>
+        </tr>
+      `}).join('');
+
+      document.getElementById('donationCount').textContent = `Showing ${filtered.length} of ${allDonations.length} donations`;
+    }
+
+    async function updateStatus(id, newStatus) {
+      const res = await db.updateDonationStatus(id, newStatus);
+      if (res.success) {
+        showToast(`Donation status updated to ${newStatus}`, 'success');
+        await loadData();
+      } else {
+        showToast(res.message || 'Failed to update status', 'error');
+        renderDonations(); // Reset UI
+      }
+    }
+
+    function viewDonation(id) {
+      const d = allDonations.find(don => String(don.donation_id) === String(id));
+      if (!d) return;
+      
+      const donorName = d.donor ? d.donor.name : 'Unknown';
+      const homeName = d.home ? d.home.name : 'N/A';
+      const childName = d.child ? d.child.name : 'General donation';
+      
+      document.getElementById('donationDetailBody').innerHTML = `
+        <div style="display:grid;gap:var(--space-md);">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h4>${formatCurrency(d.amount)}</h4>
+            <span class="tag ${d.status === 'Completed' ? 'tag-green' : d.status === 'Pending' ? 'tag-amber' : 'tag-rose'}">${d.status}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+            <div><div class="form-label">Donor</div><strong>${donorName}</strong></div>
+            <div><div class="form-label">Date</div>${formatDate(d.donation_date)}</div>
+            <div><div class="form-label">Home</div>${homeName}</div>
+            <div><div class="form-label">Type</div>${d.donation_type}</div>
+            <div><div class="form-label">Child</div>${childName}</div>
+            <div><div class="form-label">Amount</div><strong style="color:var(--primary-600);">${formatCurrency(d.amount)}</strong></div>
+            <div><div class="form-label">Payment Method</div>${d.payment_method || 'Online'}</div>
+          </div>
+          ${d.message ? `<div><div class="form-label">Message</div><p style="background:var(--primary-50);padding:var(--space-md);border-radius:var(--border-radius-md);font-style:italic;">"${d.message}"</p></div>` : ''}
+        </div>
+      `;
+      openModal('donationDetailModal');
+    }
+
+    function exportDonations() {
+      let csv = 'Date,Donor,Home,Child,Type,Amount,Status,Message\n';
+      allDonations.forEach(d => {
+        const donorName = d.donor ? d.donor.name : 'Unknown';
+        const homeName = d.home ? d.home.name : 'N/A';
+        const childName = d.child ? d.child.name : 'General';
+        csv += `${d.donation_date},"${donorName}","${homeName}","${childName}","${d.donation_type}",${d.amount},"${d.status}","${(d.message || '').replace(/"/g, '""')}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'hope_haven_donations.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Donations exported successfully! 📥');
+    }
+  </script>
+</body>
+</html>

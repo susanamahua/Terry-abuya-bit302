@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Track child welfare including health, education, and wellbeing across all Hope Haven homes.">
+  <title>Welfare Tracking | Hope Haven Admin</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .welfare-overview { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-md); margin-bottom: var(--space-xl); }
+    .welfare-big-card { background: var(--bg-card); border-radius: var(--border-radius-lg); padding: var(--space-xl); text-align: center; border: 2px solid var(--border-color); }
+    .welfare-big-card .big-number { font-family: var(--font-heading); font-size: 3rem; font-weight: 900; line-height: 1; }
+    .welfare-big-card .big-label { color: var(--text-muted); margin-top: 6px; }
+    .welfare-big-card.good { border-color: var(--success-400); }
+    .welfare-big-card.good .big-number { color: var(--success-600); }
+    .welfare-big-card.attention { border-color: var(--primary-400); }
+    .welfare-big-card.attention .big-number { color: var(--primary-600); }
+    .welfare-big-card.critical { border-color: var(--danger-400); }
+    .welfare-big-card.critical .big-number { color: var(--danger-600); }
+    .welfare-layout { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-xl); }
+    .report-type-icon { width: 40px; height: 40px; border-radius: var(--border-radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+    @media(max-width:1024px) { .welfare-layout { grid-template-columns: 1fr; } }
+    @media(max-width:640px) { .welfare-overview { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="admin-sidebar">
+      <div class="sidebar-brand"><span class="brand-icon">🏡</span><span>Hope Haven</span></div>
+      <ul class="sidebar-nav">
+        <li><a href="admin-dashboard.html"><span class="nav-icon">📊</span><span>Dashboard</span></a></li>
+        <li><a href="admin-children.html"><span class="nav-icon">👧🏾</span><span>Children</span></a></li>
+        <li><a href="admin-donations.html"><span class="nav-icon">💰</span><span>Donations</span></a></li>
+        <li><a href="admin-welfare.html" class="active"><span class="nav-icon">🏥</span><span>Welfare</span></a></li>
+      </ul>
+      <div class="sidebar-footer">
+        <a href="#" onclick="Auth.logout();window.location.href='index.html';"><span class="nav-icon">🚪</span><span>Logout</span></a>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <div class="admin-header">
+        <h1>Child Welfare Tracking 🏥</h1>
+        <div class="header-actions">
+          <button class="btn btn-primary" onclick="openModal('addReportModal')">+ Add Welfare Report</button>
+        </div>
+      </div>
+
+      <!-- Welfare Overview -->
+      <div class="welfare-overview stagger" id="welfareOverview"></div>
+
+      <!-- Main Layout -->
+      <div class="welfare-layout">
+        <!-- Timeline View -->
+        <div>
+          <div class="card" style="padding:var(--space-xl);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-lg);">
+              <h3>Welfare Timeline 📅</h3>
+              <select class="form-select" id="timelineFilter" onchange="renderTimeline()" style="max-width:180px;">
+                <option value="">All Types</option>
+                <option value="Health Checkup">Health Checkup</option>
+                <option value="Medical Treatment">Medical Treatment</option>
+                <option value="Emergency Medical">Emergency Medical</option>
+                <option value="Education Progress">Education Progress</option>
+                <option value="Nutrition Assessment">Nutrition Assessment</option>
+                <option value="Counseling Session">Counseling Session</option>
+                <option value="Skills Assessment">Skills Assessment</option>
+              </select>
+            </div>
+            <div class="timeline" id="welfareTimeline"></div>
+          </div>
+        </div>
+
+        <!-- Children Welfare Status -->
+        <div>
+          <div class="card" style="padding:var(--space-xl);">
+            <h3 style="margin-bottom:var(--space-lg);">Children Welfare Status 🧒</h3>
+            <div style="margin-bottom:var(--space-md);">
+              <input type="text" class="form-input" id="searchWelfareChild" placeholder="🔍 Search child..." oninput="renderChildrenWelfare()">
+            </div>
+            <div id="childrenWelfareList" style="max-height:500px;overflow-y:auto;"></div>
+          </div>
+
+          <!-- Recent Critical Alerts -->
+          <div class="card" style="padding:var(--space-xl);margin-top:var(--space-lg);border-color:var(--danger-400);">
+            <h3 style="margin-bottom:var(--space-md);color:var(--danger-600);">⚠️ Attention Required</h3>
+            <div id="criticalAlerts"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add Welfare Report Modal -->
+  <div class="modal-overlay" id="addReportModal">
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-header">
+        <h3>📝 Add Welfare Report</h3>
+        <button class="modal-close" onclick="closeModal('addReportModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="reportForm" onsubmit="handleAddReport(event)">
+          <div class="form-group">
+            <label class="form-label">Child *</label>
+            <select class="form-select" id="reportChild" required>
+              <option value="">Select child...</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Report Type *</label>
+              <select class="form-select" id="reportType" required>
+                <option value="Health Checkup">🩺 Health Checkup</option>
+                <option value="Medical Treatment">💊 Medical Treatment</option>
+                <option value="Emergency Medical">🚑 Emergency Medical</option>
+                <option value="Education Progress">📚 Education Progress</option>
+                <option value="Nutrition Assessment">🍎 Nutrition Assessment</option>
+                <option value="Counseling Session">🧠 Counseling Session</option>
+                <option value="Skills Assessment">🛠️ Skills Assessment</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Status *</label>
+              <select class="form-select" id="reportStatus" required>
+                <option value="Good">🟢 Good</option>
+                <option value="In Progress">🟡 In Progress</option>
+                <option value="Needs Attention">🟠 Needs Attention</option>
+                <option value="Recovering">🔵 Recovering</option>
+                <option value="Critical">🔴 Critical</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date</label>
+            <input type="date" class="form-input" id="reportDate">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Notes & Observations *</label>
+            <textarea class="form-textarea" id="reportNotes" placeholder="Detailed observations, recommendations, follow-up actions..." rows="4" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;">Submit Report 📋</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Child Welfare Detail Modal -->
+  <div class="modal-overlay" id="childWelfareModal">
+    <div class="modal" style="max-width:600px;">
+      <div class="modal-header">
+        <h3 id="cwModalTitle">Child Welfare History</h3>
+        <button class="modal-close" onclick="closeModal('childWelfareModal')">&times;</button>
+      </div>
+      <div class="modal-body" id="cwModalBody"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if (!Auth.isAdmin()) { window.location.href = 'admin-login.html'; }
+
+    let allChildren = [];
+    let allReports = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Set default date
+      document.getElementById('reportDate').value = new Date().toISOString().split('T')[0];
+
+      await loadData();
+
+      // Populate child select
+      const childSelect = document.getElementById('reportChild');
+      childSelect.innerHTML = '<option value="">Select child...</option>';
+      allChildren.forEach(c => {
+        childSelect.innerHTML += `<option value="${c.child_id}">${c.photo || '👧🏾'} ${c.name} (Age ${c.age})</option>`;
+      });
+
+      if (typeof realtime !== 'undefined') {
+        realtime.on('welfare_alert', () => loadData());
+        realtime.on('child_update', () => loadData());
+      }
+    });
+
+    async function loadData() {
+      allChildren = await db.getChildren();
+      allReports = await db.getWelfareReports();
+      
+      renderOverview();
+      renderTimeline();
+      renderChildrenWelfare();
+      renderCriticalAlerts();
+    }
+
+    function renderOverview() {
+      let green = 0, amber = 0, red = 0;
+      allChildren.forEach(c => {
+        if(c.welfare_status === 'green') green++;
+        else if(c.welfare_status === 'red') red++;
+        else amber++;
+      });
+      const total = allChildren.length || 1; // prevent div by 0
+
+      document.getElementById('welfareOverview').innerHTML = `
+        <div class="welfare-big-card good">
+          <div style="font-size:2.5rem;margin-bottom:var(--space-sm);">😊</div>
+          <div class="big-number">${green}</div>
+          <div class="big-label">Good Welfare</div>
+          <div class="progress-bar" style="margin-top:var(--space-sm);"><div class="progress-fill" style="width:${(green / total * 100)}%;background:linear-gradient(90deg,var(--success-400),var(--success-500));"></div></div>
+        </div>
+        <div class="welfare-big-card attention">
+          <div style="font-size:2.5rem;margin-bottom:var(--space-sm);">😐</div>
+          <div class="big-number">${amber}</div>
+          <div class="big-label">Needs Attention</div>
+          <div class="progress-bar" style="margin-top:var(--space-sm);"><div class="progress-fill" style="width:${(amber / total * 100)}%;background:linear-gradient(90deg,var(--primary-400),var(--primary-500));"></div></div>
+        </div>
+        <div class="welfare-big-card critical">
+          <div style="font-size:2.5rem;margin-bottom:var(--space-sm);">😟</div>
+          <div class="big-number">${red}</div>
+          <div class="big-label">Critical Attention</div>
+          <div class="progress-bar" style="margin-top:var(--space-sm);"><div class="progress-fill" style="width:${(red / total * 100)}%;background:linear-gradient(90deg,var(--danger-400),var(--danger-500));"></div></div>
+        </div>
+      `;
+    }
+
+    function renderTimeline() {
+      const typeFilter = document.getElementById('timelineFilter').value;
+      let reports = [...allReports];
+      if (typeFilter) reports = reports.filter(r => r.report_type === typeFilter);
+      reports.sort((a, b) => new Date(b.report_date) - new Date(a.report_date));
+
+      const container = document.getElementById('welfareTimeline');
+      if (reports.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><h3>No reports yet</h3></div>';
+        return;
+      }
+
+      container.innerHTML = reports.map(r => {
+        const statusClass = r.status === 'Good' ? 'success' : r.status === 'Critical' ? 'danger' : 'warning';
+        const typeIcon = getReportIcon(r.report_type);
+        const childName = r.child ? r.child.name : 'Unknown';
+        return `
+          <div class="timeline-item ${statusClass}">
+            <div class="timeline-date">${formatDate(r.report_date)}</div>
+            <div class="timeline-content">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                <div style="display:flex;align-items:center;gap:var(--space-sm);">
+                  <span style="font-size:1.2rem;">${typeIcon}</span>
+                  <strong>${childName}</strong>
+                </div>
+                <span class="tag ${r.status === 'Good' ? 'tag-green' : r.status === 'Critical' ? 'tag-rose' : 'tag-amber'}">${r.status}</span>
+              </div>
+              <div style="font-size:0.85rem;font-weight:600;color:var(--text-secondary);margin-bottom:4px;">${r.report_type}</div>
+              <p style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;">${r.notes}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderChildrenWelfare() {
+      const search = document.getElementById('searchWelfareChild').value.toLowerCase();
+      let children = [...allChildren];
+      if (search) children = children.filter(c => c.name.toLowerCase().includes(search));
+
+      // Sort: critical first, then amber, then green
+      const order = { red: 0, amber: 1, green: 2 };
+      children.sort((a, b) => (order[a.welfare_status] || 2) - (order[b.welfare_status] || 2));
+
+      const container = document.getElementById('childrenWelfareList');
+      container.innerHTML = children.map(c => {
+        // Find last report locally
+        const childReports = allReports.filter(r => r.child_id === c.child_id);
+        const lastReport = childReports.sort((a,b) => new Date(b.report_date) - new Date(a.report_date))[0];
+        
+        return `
+          <div style="display:flex;align-items:center;gap:var(--space-sm);padding:var(--space-sm) 0;border-bottom:1px solid var(--border-color);cursor:pointer;" onclick="viewChildWelfare('${c.child_id}')">
+            <span style="font-size:1.5rem;">${c.photo || '👧🏾'}</span>
+            <div style="flex:1;">
+              <div style="font-weight:700;font-size:0.9rem;">${c.name}</div>
+              <div style="font-size:0.75rem;color:var(--text-muted);">Age ${c.age} &bull; ${lastReport ? lastReport.report_type + ' on ' + formatDate(lastReport.report_date) : 'No reports'}</div>
+            </div>
+            <div class="welfare-status">
+              <span class="welfare-dot ${getWelfareColor(c.welfare_status)}"></span>
+              <span style="font-size:0.78rem;">${getWelfareLabel(c.welfare_status)}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderCriticalAlerts() {
+      const children = allChildren.filter(c => c.welfare_status === 'red' || c.welfare_status === 'amber');
+      const container = document.getElementById('criticalAlerts');
+
+      if (children.length === 0) {
+        container.innerHTML = '<p style="color:var(--success-600);text-align:center;padding:var(--space-md);">✅ All children are in good welfare status!</p>';
+        return;
+      }
+
+      container.innerHTML = children.map(c => {
+        const homeName = c.home ? c.home.name : '';
+        return `
+          <div style="display:flex;align-items:center;gap:var(--space-sm);padding:var(--space-sm) 0;border-bottom:1px solid var(--border-color);">
+            <span style="font-size:1.3rem;">${c.welfare_status === 'red' ? '🚨' : '⚠️'}</span>
+            <div style="flex:1;">
+              <div style="font-weight:700;font-size:0.9rem;">${c.name}</div>
+              <div style="font-size:0.75rem;color:var(--text-muted);">${homeName} &bull; ${c.health_status}</div>
+            </div>
+            <span class="tag ${c.welfare_status === 'red' ? 'tag-rose' : 'tag-amber'}">${c.welfare_status === 'red' ? 'Critical' : 'Attention'}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function viewChildWelfare(childId) {
+      const res = await db.getWelfareByChild(childId);
+      const child = res.child || allChildren.find(c => String(c.child_id) === String(childId));
+      if (!child) return;
+      
+      const reports = (res.reports || []).sort((a,b) => new Date(b.report_date) - new Date(a.report_date));
+      const homeName = child.home ? child.home.name : '';
+
+      document.getElementById('cwModalTitle').textContent = `${child.photo || '👧🏾'} ${child.name}'s Welfare`;
+      document.getElementById('cwModalBody').innerHTML = `
+        <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-lg);padding:var(--space-md);background:var(--primary-50);border-radius:var(--border-radius-md);">
+          <span style="font-size:2.5rem;">${child.photo || '👧🏾'}</span>
+          <div>
+            <h4>${child.name}</h4>
+            <div style="font-size:0.85rem;color:var(--text-muted);">Age ${child.age} &bull; ${child.gender} &bull; ${child.education_level || child.education || 'N/A'}</div>
+            <div style="font-size:0.85rem;color:var(--text-muted);">📍 ${homeName}</div>
+            <div style="margin-top:4px;" class="welfare-status"><span class="welfare-dot ${getWelfareColor(child.welfare_status)}"></span>${getWelfareLabel(child.welfare_status)} &bull; Health: ${child.health_status}</div>
+          </div>
+        </div>
+        <h4 style="margin-bottom:var(--space-md);">Welfare Reports (${reports.length})</h4>
+        ${reports.length === 0 ? '<p style="color:var(--text-muted);text-align:center;">No welfare reports yet.</p>' :
+          `<div class="timeline" style="max-height:350px;overflow-y:auto;">
+            ${reports.map(r => {
+              const statusClass = r.status === 'Good' ? 'success' : r.status === 'Critical' ? 'danger' : 'warning';
+              return `
+                <div class="timeline-item ${statusClass}">
+                  <div class="timeline-date">${formatDate(r.report_date)}</div>
+                  <div class="timeline-content">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                      <strong style="font-size:0.9rem;">${r.report_type}</strong>
+                      <span class="tag ${r.status === 'Good' ? 'tag-green' : r.status === 'Critical' ? 'tag-rose' : 'tag-amber'}" style="font-size:0.7rem;">${r.status}</span>
+                    </div>
+                    <p style="font-size:0.85rem;color:var(--text-secondary);">${r.notes}</p>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>`
+        }
+      `;
+      openModal('childWelfareModal');
+    }
+
+    async function handleAddReport(e) {
+      e.preventDefault();
+      const childId = document.getElementById('reportChild').value;
+
+      const reportData = {
+        child_id: childId,
+        report_type: document.getElementById('reportType').value,
+        status: document.getElementById('reportStatus').value,
+        report_date: document.getElementById('reportDate').value || new Date().toISOString().split('T')[0],
+        notes: document.getElementById('reportNotes').value
+      };
+
+      const res = await db.addWelfareReport(reportData);
+
+      if (res.success) {
+        closeModal('addReportModal');
+        document.getElementById('reportForm').reset();
+        document.getElementById('reportDate').value = new Date().toISOString().split('T')[0];
+        
+        showToast('Welfare report submitted successfully! 📋');
+        await loadData();
+      } else {
+        showToast(res.message || 'Failed to submit report', 'error');
+      }
+    }
+
+    function getReportIcon(type) {
+      const icons = {
+        'Health Checkup': '🩺',
+        'Medical Treatment': '💊',
+        'Emergency Medical': '🚑',
+        'Education Progress': '📚',
+        'Nutrition Assessment': '🍎',
+        'Counseling Session': '🧠',
+        'Skills Assessment': '🛠️'
+      };
+      return icons[type] || '📋';
+    }
+  </script>
+</body>
+</html>

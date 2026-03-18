@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Browse children's homes, donate, sponsor children, and track your impact.">
+  <title>Donor Dashboard | Hope Haven</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .donor-welcome { background: linear-gradient(135deg, var(--primary-50), var(--accent-50)); padding: 100px 0 var(--space-xl); border-bottom: 1px solid var(--border-color); }
+    .welcome-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-md); }
+    .welcome-info { display: flex; align-items: center; gap: var(--space-md); }
+    .welcome-text h1 { font-size: 1.6rem; margin-bottom: 2px; }
+    .welcome-text p { color: var(--text-muted); font-size: 0.9rem; }
+    .donor-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-md); margin-top: var(--space-xl); }
+    .homes-section { padding: var(--space-xl) 0; }
+    .filter-bar { display: flex; gap: var(--space-md); margin-bottom: var(--space-lg); flex-wrap: wrap; align-items: center; }
+    .filter-bar .form-input, .filter-bar .form-select { max-width: 250px; border-radius: var(--border-radius-full); }
+    .homes-browse { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-lg); }
+    .home-detail-card { cursor: pointer; }
+    .home-detail-card .home-img { height: 180px; border-radius: var(--border-radius-md); display: flex; align-items: center; justify-content: center; font-size: 3.5rem; margin-bottom: var(--space-md); position: relative; }
+    .home-detail-card .home-img .rating { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.9); padding: 4px 10px; border-radius: var(--border-radius-full); font-size: 0.8rem; font-weight: 700; }
+    .children-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-md); margin-top: var(--space-md); }
+    .child-mini { display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-sm); background: var(--primary-50); border-radius: var(--border-radius-md); font-size: 0.85rem; }
+    .child-mini .child-emoji { font-size: 1.5rem; }
+    .donation-history { max-height: 400px; overflow-y: auto; }
+    .donation-row { display: flex; align-items: center; justify-content: space-between; padding: var(--space-md); border-bottom: 1px solid var(--border-color); }
+    .donation-row:last-child { border-bottom: none; }
+    @media(max-width:1024px) { .homes-browse { grid-template-columns: repeat(2,1fr); } .donor-stats { grid-template-columns: 1fr; } }
+    @media(max-width:640px) { .homes-browse, .children-list { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar" id="navbar">
+    <div class="container">
+      <a href="index.html" class="navbar-brand">
+        <span class="brand-icon">🏡</span>
+        Hope Haven
+      </a>
+      <ul class="navbar-links" id="navLinks">
+        <li><a href="#browse" class="active">Browse Homes</a></li>
+        <li><a href="#automatch">Auto-Match</a></li>
+        <li><a href="#history">My Donations</a></li>
+        <li><a href="#" id="logoutBtn" onclick="Auth.logout();window.location.href='index.html';" class="btn btn-secondary btn-sm">Logout</a></li>
+      </ul>
+      <button class="mobile-menu-btn" onclick="document.getElementById('navLinks').classList.toggle('open')">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Welcome Header -->
+  <section class="donor-welcome">
+    <div class="container">
+      <div class="welcome-row">
+        <div class="welcome-info">
+          <div class="avatar lg" id="donorAvatar">JS</div>
+          <div class="welcome-text">
+            <h1 id="donorGreeting">Welcome back!</h1>
+            <p>Your generosity is changing lives 💛</p>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('donateModal')">Make a Donation 💝</button>
+      </div>
+      <div class="donor-stats" id="donorStats"></div>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  <div class="container">
+    <!-- Browse Homes -->
+    <section class="homes-section" id="browse">
+      <h2 style="margin-bottom:var(--space-sm);">Children's Homes 🏠</h2>
+      <p style="color:var(--text-muted);margin-bottom:var(--space-lg);">Browse and select a home to view children and make donations.</p>
+
+      <div class="filter-bar">
+        <input type="text" class="form-input" id="searchInput" placeholder="🔍 Search homes..." oninput="filterHomes()">
+        <select class="form-select" id="locationFilter" onchange="filterHomes()">
+          <option value="">All Locations</option>
+        </select>
+      </div>
+
+      <div class="homes-browse" id="homesBrowse"></div>
+    </section>
+
+    <!-- Auto Match -->
+    <section class="section" id="automatch">
+      <div class="match-card">
+        <div class="match-title">🤖 Smart Auto-Match</div>
+        <div class="match-desc">Let our algorithm find the perfect child to sponsor based on your preferences and their needs.</div>
+        <button class="btn btn-primary btn-lg" onclick="runAutoMatch()">Find My Match ✨</button>
+        <div id="matchResult" style="display:none;"></div>
+      </div>
+    </section>
+
+    <!-- Donation History -->
+    <section class="section" id="history">
+      <h2 style="margin-bottom:var(--space-lg);">My Donation History 📋</h2>
+      <div class="card">
+        <div class="donation-history" id="donationHistory">
+          <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <h3>No donations yet</h3>
+            <p>Start your giving journey by browsing homes above!</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Donate Modal -->
+  <div class="modal-overlay" id="donateModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>💝 Make a Donation</h3>
+        <button class="modal-close" onclick="closeModal('donateModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="donateForm" onsubmit="handleDonate(event)">
+          <div class="form-group">
+            <label class="form-label">Select Children's Home</label>
+            <select class="form-select" id="donateHome" required onchange="loadHomeChildren()">
+              <option value="">Choose a home...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Sponsor a Specific Child (Optional)</label>
+            <select class="form-select" id="donateChild">
+              <option value="">General donation to home</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Amount (KSh)</label>
+              <input type="number" class="form-input" id="donateAmount" placeholder="5000" min="100" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Donation Type</label>
+              <select class="form-select" id="donateType" required>
+                <option value="Education">🎓 Education</option>
+                <option value="Healthcare">🏥 Healthcare</option>
+                <option value="Food & Nutrition">🍎 Food & Nutrition</option>
+                <option value="Clothing">👕 Clothing</option>
+                <option value="General">💝 General</option>
+                <option value="Infrastructure">🏗️ Infrastructure</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Personal Message (Optional)</label>
+            <textarea class="form-textarea" id="donateMessage" placeholder="Write an encouraging message..." rows="3"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;">Donate Now 💛</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Home Details Modal -->
+  <div class="modal-overlay" id="homeModal">
+    <div class="modal" style="max-width:640px;">
+      <div class="modal-header">
+        <h3 id="homeModalTitle">Home Details</h3>
+        <button class="modal-close" onclick="closeModal('homeModal')">&times;</button>
+      </div>
+      <div class="modal-body" id="homeModalBody"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('homeModal')">Close</button>
+        <button class="btn btn-primary" id="donateToHomeBtn">Donate to This Home 💝</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom">
+        <p>© 2026 Hope Haven. All rights reserved. Made with 💛 for children.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    // Auth guard
+    if (!Auth.isDonor()) { window.location.href = 'donor-login.html'; }
+
+    const user = Auth.getUser();
+    let allHomes = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      allHomes = await db.getHomes();
+
+      // Greeting
+      document.getElementById('donorAvatar').textContent = getInitials(user.name);
+      document.getElementById('donorGreeting').textContent = `${getGreeting()}, ${user.name.split(' ')[0]}! 👋`;
+
+      // Donor stats
+      const historyData = await db.getDonationHistory();
+      const myDonations = historyData.donations || [];
+      const stats = historyData.summary || { total_donated: 0, donation_count: 0, children_sponsored: 0 };
+      
+      const statsHtml = `
+        <div class="stat-card">
+          <div class="stat-icon amber">💰</div>
+          <div><div class="stat-value">${formatCurrency(stats.total_donated)}</div><div class="stat-label">Total Donated</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon coral">📦</div>
+          <div><div class="stat-value">${stats.donation_count}</div><div class="stat-label">Donations Made</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon rose">👧🏾</div>
+          <div><div class="stat-value">${stats.children_sponsored}</div><div class="stat-label">Children Sponsored</div></div>
+        </div>
+      `;
+      document.getElementById('donorStats').innerHTML = statsHtml;
+
+      // Populate location filter
+      const locations = [...new Set(allHomes.map(h => h.location))];
+      const locFilter = document.getElementById('locationFilter');
+      locations.forEach(loc => {
+        locFilter.innerHTML += `<option value="${loc}">${loc}</option>`;
+      });
+
+      // Populate homes for donate modal
+      const donateHome = document.getElementById('donateHome');
+      allHomes.forEach(h => {
+        donateHome.innerHTML += `<option value="${h.home_id}">${h.name}</option>`;
+      });
+
+      renderHomes(allHomes);
+      renderDonationHistory(myDonations);
+      
+      // Real-time listener for this user's donations
+      if (typeof realtime !== 'undefined') {
+        realtime.on('donation_update', async () => {
+          const freshHistory = await db.getDonationHistory();
+          renderDonationHistory(freshHistory.donations);
+        });
+      }
+    });
+
+    function filterHomes() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const loc = document.getElementById('locationFilter').value;
+      let filtered = allHomes;
+      if (search) filtered = filtered.filter(h => h.name.toLowerCase().includes(search) || h.location.toLowerCase().includes(search));
+      if (loc) filtered = filtered.filter(h => h.location === loc);
+      renderHomes(filtered);
+    }
+
+    function renderHomes(homes) {
+      const grid = document.getElementById('homesBrowse');
+      if (homes.length === 0) {
+        grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">🔍</div><h3>No homes found</h3><p>Try adjusting your search.</p></div>';
+        return;
+      }
+      grid.innerHTML = homes.map((home, i) => `
+        <div class="card home-detail-card" onclick="showHomeDetails('${home.home_id}')">
+          <div class="home-img" style="background:${getHomeColor(home.home_id)};">
+            <span>${getHomeEmoji(i)}</span>
+            <div class="rating">⭐ ${home.rating || '4.5'}</div>
+          </div>
+          <h4>${home.name}</h4>
+          <div style="color:var(--text-muted);font-size:0.85rem;margin:4px 0;">📍 ${home.location}</div>
+          <p style="font-size:0.85rem;color:var(--text-secondary);margin:var(--space-sm) 0;">${home.description.substring(0, 80)}...</p>
+          <div style="display:flex;gap:var(--space-md);font-size:0.85rem;color:var(--text-secondary);">
+            <span>👧🏾 ${home.children_count || 0}/${home.capacity}</span>
+            <span>📅 Est. ${home.established}</span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:var(--space-sm);">
+            ${(home.needs || []).slice(0, 2).map(n => `<span class="tag tag-amber">${n}</span>`).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function showHomeDetails(homeId) {
+      const home = await db.getHomeById(homeId);
+      if (!home) return;
+      
+      const children = home.children || [];
+      const donations = home.donations || [];
+      const totalReceived = home.total_received || 0;
+
+      document.getElementById('homeModalTitle').textContent = home.name;
+      document.getElementById('homeModalBody').innerHTML = `
+        <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-lg);">
+          <div style="width:70px;height:70px;border-radius:var(--border-radius-lg);background:${getHomeColor(home.home_id)};display:flex;align-items:center;justify-content:center;font-size:2rem;">
+            ${getHomeEmoji(home.home_id - 1)}
+          </div>
+          <div>
+            <div style="color:var(--text-muted);font-size:0.85rem;">📍 ${home.location}</div>
+            <div style="color:var(--text-muted);font-size:0.85rem;">⭐ ${home.rating || '4.5'} rating &bull; Est. ${home.established}</div>
+          </div>
+        </div>
+        <p style="color:var(--text-secondary);margin-bottom:var(--space-md);">${home.description}</p>
+        <div style="display:flex;gap:var(--space-md);margin-bottom:var(--space-lg);">
+          <div class="stat-card" style="flex:1;"><div class="stat-icon amber">👧🏾</div><div><div class="stat-value" style="font-size:1.2rem;">${home.children_count || 0}</div><div class="stat-label">Children</div></div></div>
+          <div class="stat-card" style="flex:1;"><div class="stat-icon coral">💰</div><div><div class="stat-value" style="font-size:1.2rem;">${formatCurrency(totalReceived)}</div><div class="stat-label">Received</div></div></div>
+        </div>
+        <h4 style="margin-bottom:var(--space-sm);">Needs</h4>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:var(--space-lg);">
+          ${(home.needs || []).map(n => `<span class="tag tag-coral">${n}</span>`).join('')}
+        </div>
+        <h4 style="margin-bottom:var(--space-sm);">Children (${children.length})</h4>
+        <div class="children-list">
+          ${children.map(c => `
+            <div class="child-mini">
+              <span class="child-emoji">${c.photo || '👧🏾'}</span>
+              <div>
+                <div style="font-weight:700;">${c.name}</div>
+                <div style="font-size:0.78rem;color:var(--text-muted);">Age ${c.age} &bull; ${c.education_level || c.education}</div>
+              </div>
+              <div class="welfare-status" style="margin-left:auto;">
+                <span class="welfare-dot ${getWelfareColor(c.welfare_status)}"></span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      document.getElementById('donateToHomeBtn').onclick = () => {
+        closeModal('homeModal');
+        document.getElementById('donateHome').value = homeId;
+        loadHomeChildren();
+        openModal('donateModal');
+      };
+
+      openModal('homeModal');
+    }
+
+    async function loadHomeChildren() {
+      const homeId = document.getElementById('donateHome').value;
+      const childSelect = document.getElementById('donateChild');
+      childSelect.innerHTML = '<option value="">General donation to home</option>';
+      if (homeId) {
+        const home = await db.getHomeById(homeId);
+        if (home && home.children) {
+          home.children.forEach(c => {
+            childSelect.innerHTML += `<option value="${c.child_id}">${c.photo || '👧🏾'} ${c.name} (Age ${c.age})</option>`;
+          });
+        }
+      }
+    }
+
+    async function handleDonate(e) {
+      e.preventDefault();
+      const homeId = document.getElementById('donateHome').value;
+      const childId = document.getElementById('donateChild').value || null;
+
+      const donation = {
+        home_id: homeId,
+        child_id: childId,
+        amount: parseInt(document.getElementById('donateAmount').value),
+        donation_type: document.getElementById('donateType').value,
+        payment_method: 'Online',
+        message: document.getElementById('donateMessage').value
+      };
+
+      const res = await db.makeDonation(donation);
+
+      if (res.success) {
+        closeModal('donateModal');
+        document.getElementById('donateForm').reset();
+        showToast('Donation submitted successfully! Thank you for your generosity! 💛');
+        
+        // Refresh history
+        const historyData = await db.getDonationHistory();
+        renderDonationHistory(historyData.donations || []);
+        
+        // Refresh stats after delay to let animation finish
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        showToast(res.message || 'Failed to submit donation', 'error');
+      }
+    }
+
+    function renderDonationHistory(myDonations) {
+      const container = document.getElementById('donationHistory');
+      if (!myDonations || myDonations.length === 0) return;
+
+      container.innerHTML = myDonations.map(d => `
+        <div class="donation-row">
+          <div style="display:flex;align-items:center;gap:var(--space-md);">
+            <div class="stat-icon amber" style="width:44px;height:44px;font-size:1.2rem;">
+              ${d.donation_type === 'Education' ? '🎓' : d.donation_type === 'Healthcare' ? '🏥' : d.donation_type === 'Food & Nutrition' ? '🍎' : '💝'}
+            </div>
+            <div>
+              <div style="font-weight:700;">${d.home ? d.home.name : 'Hope Haven'}</div>
+              <div style="font-size:0.8rem;color:var(--text-muted);">${d.child ? 'For ' + d.child.name + ' &bull; ' : ''}${d.donation_type} &bull; ${formatDate(d.donation_date)}</div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:800;color:var(--primary-600);">${formatCurrency(d.amount)}</div>
+            <span class="tag ${d.status === 'Completed' ? 'tag-green' : d.status === 'Pending' ? 'tag-amber' : 'tag-rose'}">${d.status}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function runAutoMatch() {
+      const container = document.getElementById('matchResult');
+      container.style.display = 'block';
+      container.innerHTML = '<div style="padding:var(--space-lg);text-align:center;">Finding perfect match... 🔍</div>';
+      
+      const child = await db.getAutoMatch();
+
+      if (!child || !child.child) {
+        container.innerHTML = '<div style="padding:var(--space-lg);background:var(--bg-card);border-radius:var(--border-radius-lg);margin-top:var(--space-md);">No matches available right now. All children have sponsors! 🎉</div>';
+        return;
+      }
+
+      const c = child.child;
+      const h = c.home || {};
+      container.innerHTML = `
+        <div class="match-result" style="animation:fadeInUp 0.5s ease;">
+          <div style="font-size:3rem;">${c.photo || '👧🏾'}</div>
+          <div class="match-child-info">
+            <div class="match-child-name">${c.name}</div>
+            <div class="match-child-detail">Age ${c.age} &bull; ${c.education_level || c.education}</div>
+            <div class="match-child-detail">📍 ${h.name}, ${h.location}</div>
+            <div class="match-child-detail">Needs: ${c.needs}</div>
+            <div style="margin-top:var(--space-sm);">
+              <span class="welfare-status"><span class="welfare-dot ${getWelfareColor(c.welfare_status)}"></span>${getWelfareLabel(c.welfare_status)}</span>
+            </div>
+          </div>
+          <button class="btn btn-accent" onclick="sponsorChild('${c.child_id}','${c.home_id}')">Sponsor ${c.name.split(' ')[0]} 💛</button>
+        </div>
+      `;
+    }
+
+    function sponsorChild(childId, homeId) {
+      document.getElementById('donateHome').value = homeId;
+      loadHomeChildren().then(() => {
+        setTimeout(() => {
+          document.getElementById('donateChild').value = childId;
+        }, 100);
+      });
+      openModal('donateModal');
+    }
+  </script>
+</body>
+</html>

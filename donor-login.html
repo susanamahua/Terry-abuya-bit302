@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Sign in or register as a donor to start making a difference in children's lives.">
+  <title>Donor Login | Hope Haven</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .tab-switch { display: flex; gap: 0; margin-bottom: var(--space-xl); border-radius: var(--border-radius-full); overflow: hidden; border: 2px solid var(--primary-300); }
+    .tab-switch button { flex: 1; padding: 12px; border: none; background: transparent; font-family: var(--font-body); font-weight: 700; font-size: 0.95rem; cursor: pointer; color: var(--text-secondary); transition: all var(--transition-fast); }
+    .tab-switch button.active { background: linear-gradient(135deg, var(--primary-400), var(--accent-500)); color: white; }
+    .form-panel { display: none; }
+    .form-panel.active { display: block; animation: fadeIn 0.3s ease; }
+    .divider { display: flex; align-items: center; gap: var(--space-md); margin: var(--space-lg) 0; color: var(--text-muted); font-size: 0.85rem; }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--neutral-300); }
+    .checkbox-row { display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-md); }
+    .checkbox-row input { accent-color: var(--primary-500); }
+    .error-msg { background: var(--rose-50); color: var(--danger-600); padding: 10px 16px; border-radius: var(--border-radius-md); font-size: 0.85rem; margin-bottom: var(--space-md); display: none; border: 1px solid var(--rose-200); }
+    .error-msg.show { display: block; animation: fadeIn 0.3s ease; }
+  </style>
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-icon">💛</div>
+        <h2>Welcome to Hope Haven</h2>
+        <p>Sign in or create an account to start giving</p>
+      </div>
+
+      <div class="tab-switch">
+        <button class="active" onclick="switchTab('login')">Sign In</button>
+        <button onclick="switchTab('register')">Register</button>
+      </div>
+
+      <div id="errorMsg" class="error-msg"></div>
+
+      <!-- Login Form -->
+      <div class="form-panel active" id="loginPanel">
+        <form id="loginForm" onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input type="email" class="form-input" id="loginEmail" placeholder="you@example.com" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-input" id="loginPassword" placeholder="Enter your password" required>
+          </div>
+          <div class="checkbox-row">
+            <input type="checkbox" id="remember">
+            <label for="remember" style="font-size:0.85rem;color:var(--text-secondary);">Remember me</label>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;">Sign In →</button>
+        </form>
+        </form>
+      </div>
+
+      <!-- Register Form -->
+      <div class="form-panel" id="registerPanel">
+        <form id="registerForm" onsubmit="handleRegister(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Full Name</label>
+              <input type="text" class="form-input" id="regName" placeholder="John Doe" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone</label>
+              <input type="tel" class="form-input" id="regPhone" placeholder="+254 7XX XXX XXX">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Location (City/Area)</label>
+            <input type="text" class="form-input" id="regLocation" placeholder="e.g. Nairobi, Kenya">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input type="email" class="form-input" id="regEmail" placeholder="you@example.com" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-input" id="regPassword" placeholder="Create a password" required minlength="6">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Preferred Donation Type</label>
+            <select class="form-select" id="regType">
+              <option value="">Select preference (optional)</option>
+              <option value="Education">🎓 Education</option>
+              <option value="Healthcare">🏥 Healthcare</option>
+              <option value="Food & Nutrition">🍎 Food & Nutrition</option>
+              <option value="Clothing">👕 Clothing</option>
+              <option value="General">💝 General Support</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;">Create Account 🎉</button>
+        </form>
+      </div>
+
+      <div class="auth-footer">
+        <a href="index.html">← Back to Home</a> &nbsp;|&nbsp; <a href="admin-login.html">Admin Login</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    // Redirect if already logged in
+    if (Auth.isDonor()) window.location.href = 'donor-dashboard.html';
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-switch button').forEach((b, i) => {
+        b.classList.toggle('active', (tab === 'login' && i === 0) || (tab === 'register' && i === 1));
+      });
+      document.getElementById('loginPanel').classList.toggle('active', tab === 'login');
+      document.getElementById('registerPanel').classList.toggle('active', tab === 'register');
+      hideError();
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('errorMsg');
+      el.textContent = msg;
+      el.classList.add('show');
+    }
+
+    function hideError() {
+      document.getElementById('errorMsg').classList.remove('show');
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      const result = await Auth.loginDonor(email, password);
+      if (result.success) {
+        window.location.href = 'donor-dashboard.html';
+      } else {
+        showError(result.message);
+      }
+    }
+
+    async function handleRegister(e) {
+      e.preventDefault();
+      const data = {
+        name: document.getElementById('regName').value,
+        email: document.getElementById('regEmail').value,
+        password: document.getElementById('regPassword').value,
+        phone: document.getElementById('regPhone').value,
+        location: document.getElementById('regLocation').value,
+        preferredType: document.getElementById('regType').value
+      };
+      const result = await Auth.registerDonor(data);
+      if (result.success) {
+        window.location.href = 'donor-dashboard.html';
+      } else {
+        showError(result.message);
+      }
+    }
+  </script>
+</body>
+</html>

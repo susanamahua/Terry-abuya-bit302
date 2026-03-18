@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Hope Haven - Connecting generous hearts with children's homes. Donate, sponsor, and make a difference in a child's life.">
+  <title>Hope Haven | Donation & Child Welfare Management</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .stats-section { background: linear-gradient(135deg, var(--primary-500), var(--accent-600)); }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-xl); text-align: center; color: white; }
+    .stats-grid .stat-number { font-family: var(--font-heading); font-size: 3rem; font-weight: 900; }
+    .stats-grid .stat-text { font-size: 1rem; opacity: 0.9; margin-top: 4px; }
+    .homes-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-lg); }
+    .home-preview { background: var(--bg-card); border-radius: var(--border-radius-lg); overflow: hidden; border:1px solid var(--border-color); transition: all var(--transition-base); }
+    .home-preview:hover { transform: translateY(-6px); box-shadow: var(--shadow-xl); }
+    .home-preview .home-img { height: 200px; display: flex; align-items: center; justify-content: center; font-size: 4rem; position: relative; }
+    .home-preview .home-img .overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.05); }
+    .home-preview .home-body { padding: var(--space-lg); }
+    .home-preview .home-body h3 { font-size: 1.15rem; margin-bottom: 6px; }
+    .home-preview .home-body .loc { color: var(--text-muted); font-size: 0.85rem; display: flex; align-items: center; gap: 4px; }
+    .home-preview .home-body .home-meta { display: flex; gap: var(--space-md); margin-top: var(--space-sm); font-size: 0.85rem; color: var(--text-secondary); }
+    .home-preview .home-body .needs-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--space-sm); }
+    .how-it-works { background: var(--primary-50); }
+    .steps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-xl); }
+    .step-card { text-align: center; padding: var(--space-xl); }
+    .step-card .step-num { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-400), var(--accent-500)); color: white; font-family: var(--font-heading); font-weight: 900; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-md); }
+    .step-card .step-icon { font-size: 2.5rem; margin-bottom: var(--space-sm); }
+    .step-card h3 { margin-bottom: var(--space-sm); }
+    .step-card p { color: var(--text-secondary); font-size: 0.95rem; }
+    .testimonials { background: var(--bg-body); }
+    .testimonial-card { background: var(--bg-card); border-radius: var(--border-radius-lg); padding: var(--space-xl); border: 1px solid var(--border-color); position: relative; }
+    .testimonial-card .quote { font-size: 1.05rem; line-height: 1.7; color: var(--text-secondary); margin-bottom: var(--space-md); font-style: italic; }
+    .testimonial-card .author { display: flex; align-items: center; gap: var(--space-sm); }
+    .testimonial-card .author-name { font-weight: 700; }
+    .testimonial-card .author-role { font-size: 0.8rem; color: var(--text-muted); }
+    .testimonial-card::before { content: '"'; position: absolute; top: 10px; left: 20px; font-size: 4rem; color: var(--primary-200); font-family: serif; line-height: 1; }
+    .cta-section { background: linear-gradient(135deg, var(--primary-50), var(--accent-50), var(--rose-50)); text-align: center; }
+    .cta-section h2 { margin-bottom: var(--space-md); }
+    .cta-section p { color: var(--text-secondary); margin-bottom: var(--space-xl); max-width: 500px; margin-left: auto; margin-right: auto; }
+    @media(max-width:1024px) { .stats-grid { grid-template-columns: repeat(2,1fr); } .homes-grid, .steps-grid { grid-template-columns: repeat(2,1fr); } }
+    @media(max-width:640px) { .stats-grid, .homes-grid, .steps-grid { grid-template-columns: 1fr; } .stats-grid .stat-number { font-size: 2rem; } }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar" id="navbar">
+    <div class="container">
+      <a href="index.html" class="navbar-brand">
+        <span class="brand-icon">🏡</span>
+        Hope Haven
+      </a>
+      <ul class="navbar-links" id="navLinks">
+        <li><a href="index.html" class="active">Home</a></li>
+        <li><a href="#homes">Children's Homes</a></li>
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="donor-login.html" class="btn btn-primary btn-sm">Become a Donor ❤️</a></li>
+        <li><a href="admin-login.html" style="font-size:0.8rem;opacity:0.6;">Admin</a></li>
+      </ul>
+      <button class="mobile-menu-btn" onclick="document.getElementById('navLinks').classList.toggle('open')">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-text animate-fade-in-up">
+          <h1>Every Child Deserves a <span class="text-gradient">Bright Future</span> ☀️</h1>
+          <p>Connect with children's homes near you, make meaningful donations, and sponsor a child's journey to a better life. Together, we can create lasting change.</p>
+          <div class="hero-actions">
+            <a href="donor-login.html" class="btn btn-primary btn-lg">Start Donating 💛</a>
+            <a href="#homes" class="btn btn-secondary btn-lg">Find Homes Near Me 📍</a>
+          </div>
+        </div>
+        <div class="hero-image">
+          <div style="width:100%;height:380px;border-radius:var(--border-radius-xl);background:linear-gradient(135deg,#FDE68A,#FDBA74,#FDA4AF);display:flex;align-items:center;justify-content:center;font-size:8rem;box-shadow:var(--shadow-xl);">
+            🧒🏾
+          </div>
+          <div class="hero-floating-card card-1">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:1.5rem;">💰</span>
+              <div>
+                <div style="font-weight:800;font-size:1.1rem;" id="heroTotal">KSh 0</div>
+                <div style="font-size:0.75rem;color:var(--text-muted);">Total Donated</div>
+              </div>
+            </div>
+          </div>
+          <div class="hero-floating-card card-2">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:1.5rem;">👨‍👩‍👧‍👦</span>
+              <div>
+                <div style="font-weight:800;font-size:1.1rem;" id="heroKids">0</div>
+                <div style="font-size:0.75rem;color:var(--text-muted);">Children Helped</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Counter -->
+  <section class="stats-section section">
+    <div class="container">
+      <div class="stats-grid stagger">
+        <div>
+          <div class="stat-number" data-target="10">0</div>
+          <div class="stat-text">Children's Homes</div>
+        </div>
+        <div>
+          <div class="stat-number" data-target="289">0</div>
+          <div class="stat-text">Children Cared For</div>
+        </div>
+        <div>
+          <div class="stat-number" data-target="500">0</div>
+          <div class="stat-text">Generous Donors</div>
+        </div>
+        <div>
+          <div class="stat-number" data-target="2500000">0</div>
+          <div class="stat-text">KSh Donated</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Homes Near Me -->
+  <section class="section" id="homes">
+    <div class="container">
+      <div class="section-title">
+        <h2>Children's Homes <span class="text-gradient">Near You</span> 📍</h2>
+        <p>Discover children's homes in your area and learn how you can make a difference in the lives of vulnerable children.</p>
+      </div>
+      <div class="homes-grid stagger" id="homesGrid">
+        <!-- Filled by JS -->
+      </div>
+      <div style="text-align:center;margin-top:var(--space-xl);">
+        <a href="donor-login.html" class="btn btn-primary">View All Homes & Donate →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="how-it-works section" id="how-it-works">
+    <div class="container">
+      <div class="section-title">
+        <h2>How It <span class="text-gradient">Works</span> ✨</h2>
+        <p>Making a difference is simple. Follow these easy steps to start your giving journey.</p>
+      </div>
+      <div class="steps-grid stagger">
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <div class="step-icon">📝</div>
+          <h3>Sign Up</h3>
+          <p>Create your donor account in seconds. It's free, quick, and secure.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <div class="step-icon">🔍</div>
+          <h3>Find a Home</h3>
+          <p>Browse children's homes near you or use our smart auto-match to find the perfect fit.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">3</div>
+          <div class="step-icon">💝</div>
+          <h3>Donate & Impact</h3>
+          <p>Make a donation or sponsor a child. Track your impact and see lives transformed.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="testimonials section">
+    <div class="container">
+      <div class="section-title">
+        <h2>Stories of <span class="text-gradient">Hope</span> 💫</h2>
+        <p>Hear from donors and caregivers about the impact of your generosity.</p>
+      </div>
+      <div class="grid grid-3 stagger">
+        <div class="testimonial-card">
+          <div class="quote">Sponsoring little Amani through Hope Haven has been the most rewarding experience. Seeing her progress reports and knowing I'm making a difference fills my heart with joy.</div>
+          <div class="author">
+            <div class="avatar">JS</div>
+            <div>
+              <div class="author-name">Jane Smith</div>
+              <div class="author-role">Donor since 2021</div>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card">
+          <div class="quote">The auto-match feature connected me with a child whose needs perfectly aligned with what I wanted to give. The platform makes giving so personal and meaningful.</div>
+          <div class="author">
+            <div class="avatar">MJ</div>
+            <div>
+              <div class="author-name">Michael Johnson</div>
+              <div class="author-role">Sponsor since 2022</div>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card">
+          <div class="quote">As a home caregiver, this platform has transformed how we receive and manage donations. The welfare tracking helps us provide better care for every child.</div>
+          <div class="author">
+            <div class="avatar">MW</div>
+            <div>
+              <div class="author-name">Martha Wangui</div>
+              <div class="author-role">Caregiver, Sunrise Home</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section section">
+    <div class="container">
+      <h2>Ready to Make a <span class="text-gradient">Difference</span>? 🌟</h2>
+      <p>Join hundreds of generous donors who are changing lives, one child at a time.</p>
+      <div style="display:flex;gap:var(--space-md);justify-content:center;flex-wrap:wrap;">
+        <a href="donor-login.html" class="btn btn-primary btn-lg">Become a Donor 💛</a>
+        <a href="#homes" class="btn btn-secondary btn-lg">Explore Homes 🏡</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand">🏡 Hope Haven</div>
+          <p style="margin-bottom:var(--space-md);line-height:1.7;">Connecting generous hearts with children in need. Every donation, big or small, creates ripples of hope and change.</p>
+        </div>
+        <div>
+          <h4>Quick Links</h4>
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="#homes">Children's Homes</a></li>
+            <li><a href="donor-login.html">Donor Portal</a></li>
+            <li><a href="#how-it-works">How It Works</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Support</h4>
+          <ul>
+            <li><a href="#">FAQ</a></li>
+            <li><a href="#">Contact Us</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Contact</h4>
+          <ul>
+            <li>📧 info@hopehaven.org</li>
+            <li>📞 +254 700 123 456</li>
+            <li>📍 Nairobi, Kenya</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2026 Hope Haven. All rights reserved. Made with 💛 for children.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Populate homes grid
+      const allHomes = await db.getHomes();
+      const homes = allHomes.slice(0, 6);
+      const grid = document.getElementById('homesGrid');
+      homes.forEach((home, i) => {
+        grid.innerHTML += `
+          <div class="home-preview">
+            <div class="home-img" style="background:${getHomeColor(home.home_id)};">
+              <span>${getHomeEmoji(i)}</span>
+              <div class="overlay"></div>
+            </div>
+            <div class="home-body">
+              <h3>${home.name}</h3>
+              <div class="loc">📍 ${home.location}</div>
+              <div class="home-meta">
+                <span>👧🏾 ${home.children_count || 0} children</span>
+                <span>⭐ ${home.rating || '4.5'}</span>
+              </div>
+              <div class="needs-tags">
+                ${(home.needs || []).slice(0, 3).map(n => `<span class="tag tag-amber">${n}</span>`).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      // Animate hero stats
+      const children = await db.getChildren();
+      document.getElementById('heroTotal').textContent = formatCurrency(2500000); // Demo value
+      document.getElementById('heroKids').textContent = children.length;
+
+      // Animate stat counters on scroll
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const numbers = entry.target.querySelectorAll('.stat-number');
+            numbers.forEach(el => {
+              const target = parseInt(el.dataset.target);
+              animateCounter(el, target);
+            });
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.5 });
+
+      const statsSection = document.querySelector('.stats-grid');
+      if (statsSection) observer.observe(statsSection);
+    });
+  </script>
+</body>
+</html>
