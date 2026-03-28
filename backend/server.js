@@ -6,6 +6,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const helmet = require('helmet');
+const compression = require('compression');
 const path = require('path');
 require('dotenv').config();
 
@@ -24,6 +25,9 @@ const adminRoutes = require('./routes/admin');
 const app = express();
 const server = http.createServer(app);
 
+// Trust proxy for production (Render/Heroku/etc)
+app.set('trust proxy', 1);
+
 // Initialize Socket.io
 const io = new Server(server, {
   cors: {
@@ -40,6 +44,8 @@ app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false
 }));
+
+app.use(compression());
 
 app.use(cors({
   origin: '*',

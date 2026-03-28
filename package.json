@@ -1,0 +1,13 @@
+{
+  "name": "hopehaven-fullstack",
+  "version": "1.0.0",
+  "description": "Hope Haven - Fullstack Deployment Wrapper",
+  "scripts": {
+    "start": "node backend/server.js",
+    "build": "cd backend && npm install",
+    "seed": "cd backend && npm run seed"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

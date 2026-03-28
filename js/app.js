@@ -181,6 +181,13 @@ class HopeHavenDB {
     } catch { return null; }
   }
 
+  async getChildById(id) {
+    try {
+      const data = await API.get(`/children/${id}`);
+      return data;
+    } catch { return { success: false, message: 'Child not found' }; }
+  }
+
   // ---- Children ----
   async getChildren(filters = {}) {
     const params = new URLSearchParams(filters).toString();

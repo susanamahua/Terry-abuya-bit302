@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Manage children and students across all Hope Haven homes.">
-  <title>Children Management | Hope bridge Admin</title>
+  <title>Children Management | Hope haven Admin</title>
   <link rel="stylesheet" href="css/styles.css">
   <style>
     .children-header {
@@ -276,10 +276,10 @@
             <td>${c.age}</td>
             <td>${c.gender}</td>
             <td>${homeName}</td>
-            <td>${c.education_level || c.education || 'N/A'}</td>
+            <td>${c.education_level || 'N/A'}</td>
             <td><span class="tag ${c.health_status === 'Good' ? 'tag-green' : 'tag-amber'}">${c.health_status}</span></td>
             <td><div class="welfare-status"><span class="welfare-dot ${getWelfareColor(c.welfare_status)}"></span>${getWelfareLabel(c.welfare_status)}</div></td>
-            <td>${c.sponsorship_status === 'Sponsored' ? '<span class="tag tag-green">Yes</span>' : '<span class="tag tag-rose">No</span>'}</td>
+            <td>${c.sponsorship_status === 'sponsored' ? '<span class="tag tag-green">Yes</span>' : '<span class="tag tag-rose">No</span>'}</td>
             <td><div class="actions-cell">
               <button class="btn btn-sm btn-secondary" onclick="editChild('${c.child_id}')">✏️</button>
               <button class="btn btn-sm btn-danger" onclick="deleteChild('${c.child_id}','${c.name}')">🗑️</button>
@@ -311,7 +311,7 @@
         if (res.success) showToast('Child updated successfully! ✅');
         else showToast(res.message || 'Error updating child', 'error');
       } else {
-        const res = await db.createChild(data);
+        const res = await db.addChild(data);
         if (res.success) showToast('New child added successfully! 🎉');
         else showToast(res.message || 'Error adding child', 'error');
       }
@@ -335,7 +335,7 @@
       document.getElementById('childAge').value = child.age;
       document.getElementById('childGender').value = child.gender;
       document.getElementById('childHome').value = child.home_id;
-      document.getElementById('childEducation').value = child.education_level || child.education || '';
+      document.getElementById('childEducation').value = child.education_level || '';
       document.getElementById('childHealth').value = child.health_status;
       document.getElementById('childWelfare').value = child.welfare_status;
       document.getElementById('childNeeds').value = child.needs || '';
